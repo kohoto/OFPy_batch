@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+# Loop through all subdirectories and run the simulation
+cd /scratch/user/tohoko.tj/dissolCases/
+for dir_batch in */
+do
+  for dir in ${dir_batch}*/
+  do
+    if [ -d ${dir}conductivity/60/ ] 
+    then
+        echo "Directory ${dir}conductivity/60/ exists." 
+        rm -r ${dir}conductivity/*[1-9] # remove processor* to save disk space
+    else
+        echo "Error: Directory ${dir}conductivity/60/ does not exists."
+    fi
+    
+  done
+done
+echo Removed files from conductivity.

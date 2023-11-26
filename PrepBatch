@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+cd $SCRATCH/python_project
+module load GCCcore/8.3.0
+module load Python/3.7.4
+source venv/bin/activate
+
+echo batch name?
+read batch_dir
+
+start_proj='$SCRATCH/dissolCases/start_proj'
+dissolCases_dir=$SCRATCH/dissolCases/$batch_dir
+
+# Loop through all subdirectories and close fracture
+cd $dissolCases_dir
+python -c "from OFPy import OFPy_prep_batch; OFPy_prep_batch.prep_batch('$dissolCases_dir' , '$start_proj')"
+deactivate
+
+cp ../EtchingBatch.sbatch .
+
+echo All cases are prepared at $dissolCases_dir
