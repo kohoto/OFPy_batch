@@ -15,6 +15,7 @@ cd $dissolCases_dir
 python -c "from OFPy import OFPy_prep_batch; OFPy_prep_batch.prep_batch('$dissolCases_dir' , '$start_proj')"
 deactivate
 
-cp ../EtchingBatch.sbatch .
+ln -s ../OFPy_batch/CondBatch.sbatch .
+ln -s ../OFPy_batch/CondBatchSlow.sbatch .
 
 echo All cases are prepared at $dissolCases_dir

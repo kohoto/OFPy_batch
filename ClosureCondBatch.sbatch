@@ -20,15 +20,16 @@ source $SCRATCH/python_project/venv/bin/activate
 
 # Loop through all subdirectories and run the simulation
 cd $SLURM_SUBMIT_DIR # The directory the job was submitted from.
+echo $SLURM_SUBMIT_DIR
 start_time=$(date +%s)
 for dir in */
 do
   cd $dir
   dir_wo_slash=${dir::-1}
   echo Running $dir_wo_slash
-  # generate closed mesh for 1000, 2000, 3000, and 4000 psi closure stress
+  # generate closed mesh for 0, 1000, 2000, 3000, and 4000 psi closure stress
   python -c "from OFPy import OFPy_deform_mesh; OFPy_deform_mesh.prep_case('$SLURM_SUBMIT_DIR/$dir_wo_slash', close=True)"
-  for pc in 1000 # 2000 3000 4000
+  for pc in 1000 2000 3000 4000
   do
     cd conductivity$pc
     # make sure Run file works
