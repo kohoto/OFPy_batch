@@ -27,11 +27,14 @@ do
   cd $dir
   dir_wo_slash=${dir::-1}
   echo Running $dir_wo_slash
+
   # generate closed mesh for 0, 1000, 2000, 3000, and 4000 psi closure stress
   python -c "from OFPy import OFPy_deform_mesh; OFPy_deform_mesh.prep_case('$SLURM_SUBMIT_DIR/$dir_wo_slash', close=True)"
-  for pc in 1000 2000 3000 4000
+  for pc in 0 1000 2000 3000 4000
   do
+    cp ../../files_for_slow/U conductivity$pc/0
     cd conductivity$pc
+    eval "checkMesh -allGeometry -allTopology"
     # make sure Run file works
     sed -i -e 's/\r$//' PararellRun
     chmod 775 PararellRun
