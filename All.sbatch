@@ -1,9 +1,9 @@
 #!/usr/bin/bash
-#SBATCH -J EtchingBatch
+#SBATCH -J All_cond_only
 #SBATCH -t 12:00:00              
 #SBATCH -N 5
 #SBATCH --ntasks-per-node=5
-#SBATCH --mem=17G
+#SBATCH --mem=32G
 #SBATCH -o %x_%j.log
 
 #### PUT THIS FILE IN THE BATCH DIRECTORY ####
@@ -22,25 +22,25 @@ source $SCRATCH/python_project/venv/bin/activate
 #ny = 5
 # Loop through all subdirectories and run the simulation
 echo $SLURM_SUBMIT_DIR
-cd $SLURM_SUBMIT_DIR # The directory the job was submitted from.
+ # The directory the job was submitted from.
 for dir in */
 do
-  cd $dir
+  cd $SLURM_SUBMIT_DIR/$dir
   sed -i -e 's/\r$//' etching/PararellRun
   ./etching/PararellRun 5 5
   rm -r etching/pro* # remove processor* to save disk space
 
   # start conductivity
-    dir_wo_slash=${dir::-1}
+  dir_wo_slash=${dir::-1}
   echo Running $dir_wo_slash
 
   # generate closed mesh for 0, 1000, 2000, 3000, and 4000 psi closure stress
   python -c "from OFPy import OFPy_deform_mesh; OFPy_deform_mesh.prep_case('$SLURM_SUBMIT_DIR/$dir_wo_slash', close=True)"
   for pc in 0 1000 2000 3000 4000
   do
-    cp ../../files_for_slow/U conductivity$pc/0
-    cd conductivity$pc
-    eval "checkMesh -allGeometry -allTopology"
+    # cp ../../files_for_slow/U conductivity$pc/0
+    cd $SLURM_SUBMIT_DIR/$dir_wo_slash/conductivity$pc  # always use full path and don't use cd ../
+    #eval "checkMesh -allGeometry -allTopology"
     # make sure Run file works
     sed -i -e 's/\r$//' PararellRun
     chmod 775 PararellRun
@@ -52,13 +52,13 @@ do
     eval "postProcess -func 'patchIntegrate(name=inlet, U)' -latestTime  2>&1 | tee q.out"
     eval "postProcess -func 'patchAverage(name=inlet, p)' -latestTime  2>&1 | tee pin.out"
     eval "postProcess -func 'patchAverage(name=outlet, p)' -latestTime  2>&1 | tee pout.out"
-    cd ../
+    # cd ../ # always use full path and don't use cd ../
   done
 
   ## calc conductivity
   python -c "from OFPy import OFPy_cond; OFPy_cond.calc_cond('$SLURM_SUBMIT_DIR/$dir_wo_slash')"
 
-  cd ../
+  # cd ../
 done
 
 end_time=$(date +%s)

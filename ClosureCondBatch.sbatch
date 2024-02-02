@@ -1,10 +1,10 @@
 #!/usr/bin/bash
-#SBATCH -J CondBatch
+#SBATCH -J ClosureCondBatch
 #SBATCH -t 3:00:00              
 #SBATCH -N 5
 #SBATCH --ntasks-per-node=5
-#SBATCH --mem=16G
-#SBATCH -o %x_%j.out
+#SBATCH --mem=32G
+#SBATCH -o %x_%j.log
 
 #### PUT THIS FILE IN THE BATCH DIRECTORY ####
 
@@ -18,13 +18,14 @@ module load GCCcore/8.3.0
 module load Python/3.7.4
 source $SCRATCH/python_project/venv/bin/activate
 
+#nx = 5
+#ny = 5
 # Loop through all subdirectories and run the simulation
-cd $SLURM_SUBMIT_DIR # The directory the job was submitted from.
-echo $SLURM_SUBMIT_DIR
-start_time=$(date +%s)
+cd $SLURM_SUBMIT_DIR
 for dir in */
 do
-  cd $dir
+  cd $SLURM_SUBMIT_DIR/$dir
+  # start conductivity
   dir_wo_slash=${dir::-1}
   echo Running $dir_wo_slash
 
@@ -32,9 +33,9 @@ do
   python -c "from OFPy import OFPy_deform_mesh; OFPy_deform_mesh.prep_case('$SLURM_SUBMIT_DIR/$dir_wo_slash', close=True)"
   for pc in 0 1000 2000 3000 4000
   do
-    cp ../../files_for_slow/U conductivity$pc/0
-    cd conductivity$pc
-    eval "checkMesh -allGeometry -allTopology"
+    # cp ../../files_for_slow/U conductivity$pc/0
+    cd $SLURM_SUBMIT_DIR/$dir_wo_slash/conductivity$pc  # always use full path and don't use cd ../
+    #eval "checkMesh -allGeometry -allTopology"
     # make sure Run file works
     sed -i -e 's/\r$//' PararellRun
     chmod 775 PararellRun
@@ -46,16 +47,14 @@ do
     eval "postProcess -func 'patchIntegrate(name=inlet, U)' -latestTime  2>&1 | tee q.out"
     eval "postProcess -func 'patchAverage(name=inlet, p)' -latestTime  2>&1 | tee pin.out"
     eval "postProcess -func 'patchAverage(name=outlet, p)' -latestTime  2>&1 | tee pout.out"
-    cd ../
+    # cd ../ # always use full path and don't use cd ../
   done
 
   ## calc conductivity
   python -c "from OFPy import OFPy_cond; OFPy_cond.calc_cond('$SLURM_SUBMIT_DIR/$dir_wo_slash')"
-  cd ../
+
+  # cd ../
 done
-end_time=$(date +%s)
-# elasped time with second resolution
-elapsed=$(( end_time - start_time ))
-eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
 deactivate
-echo CondBatch Done.
+
+echo All cases have been run!
